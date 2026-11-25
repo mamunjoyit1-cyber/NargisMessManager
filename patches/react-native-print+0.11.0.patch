@@ -1,0 +1,29 @@
+diff --git a/node_modules/react-native-print/android/build.gradle b/node_modules/react-native-print/android/build.gradle
+index 34e2591..1ff95d0 100755
+--- a/node_modules/react-native-print/android/build.gradle
++++ b/node_modules/react-native-print/android/build.gradle
+@@ -1,14 +1,15 @@
+ apply plugin: 'com.android.library'
+ 
+ android {
+-    buildToolsVersion = "31.0.0"
++    buildToolsVersion = rootProject.ext.buildToolsVersion
++    compileSdkVersion = rootProject.ext.compileSdkVersion
+ 
+     defaultConfig {
+         minSdkVersion = 21
+-        compileSdkVersion = 31
+         targetSdkVersion 29
+         versionCode 1
+         versionName "1.0"
++
+         ndk {
+             abiFilters "armeabi-v7a", "x86"
+         }
+@@ -16,5 +17,5 @@ android {
+ }
+ 
+ dependencies {
+-    implementation "com.facebook.react:react-native:+" // From node_modules
++    implementation "com.facebook.react:react-native:+"
+ }
