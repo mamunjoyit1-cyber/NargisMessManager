@@ -1,6 +1,7 @@
 // TODO-FIREBASE: পরে শুধু এই ফাইল বদলে Firestore বসবে। স্ক্রিনগুলো বদলাতে হবে না।
 import { thisMonth } from '../utils/dateUtils.js';
 import { monthSummary, prevMonthId } from '../utils/calculations.js';
+import { ensureRosters } from '../constants/roster.js';
 const KEY = 'nmm_db_v1';
 let state = null;
 const bnNum = (n) => String(n).replace(/\d/g, (d) => '০১২৩৪৫৬৭৮৯'[d]);
@@ -15,6 +16,7 @@ const persist = () => localStorage.setItem(KEY, JSON.stringify(state));
 export async function init() {
   try { state = JSON.parse(localStorage.getItem(KEY)); } catch { state = null; }
   if (!state) state = fresh();
+  ensureRosters(state);
   if (!state.months.some((m) => m.id === thisMonth())) { const pm = prevMonthId(state, thisMonth()); state.months.push({ id: thisMonth(), openingCash: pm ? monthSummary(state, pm).cash : 0, status: 'open' }); }
   persist();
 }
@@ -23,4 +25,4 @@ export async function add(col, o) { const r = { id: uid(), createdAt: new Date()
 export async function update(col, id, patch) { const r = state[col].find((x) => x.id === id); if (r) Object.assign(r, patch); persist(); return r; }
 export async function remove(col, id) { state[col] = state[col].filter((x) => x.id !== id); persist(); }
 export async function log(userId, action, ref, note = '') { await add('audit', { userId, action, ref, note }); }
-export async function replaceAll(data) { state = data; persist(); }
+export async function replaceAll(data) { state = ensureRosters(data); persist(); }

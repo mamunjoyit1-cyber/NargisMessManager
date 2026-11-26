@@ -1,3 +1,4 @@
+import { rosterFor, residentsText } from '../constants/roster.js';
 import { esc } from '../utils/html.js';
 import { today, fmtDate } from '../utils/dateUtils.js';
 import { fmtNum } from '../utils/i18n.js';
@@ -11,7 +12,7 @@ export default {
     return `<h2>${c.t('collection')}</h2><div class="card"><label>${c.t('batch')}<select id="cb">${opts}</select></label>
     <label>${c.t('date')}<input type="date" id="cd" value="${today()}"></label>
     <div class="row"><div>${c.t('totalStudents')}: <b id="cts">0</b></div><div>${c.t('unpaidCount')}: <b id="cun">0</b></div></div>
-    <p class="err" id="hint"></p>
+    <p class="err" id="hint"></p><p class="mu" id="cres"></p>
     <label>${c.t('paidCount')}<input type="number" id="cp" inputmode="numeric" min="0"></label>
     <label>${c.t('perStudent')}<input type="number" id="cps" inputmode="numeric" min="0"></label>
     <div class="total">${c.t('total')}: <b id="ctot"></b></div><div class="err" id="ce"></div><button class="btn" id="csave">${c.t('save')}</button><button class="btn s o" id="ccancel" style="display:none">${c.t('cancel')}</button></div>
@@ -24,7 +25,8 @@ export default {
     const $ = (i) => m.querySelector('#' + i), bOf = () => c.d.batches.find((b) => b.id === $('cb').value);
     const calc = () => { const b = bOf(), paid = Number($('cp').value) || 0, per = Number($('cps').value) || 0;
       $('cts').textContent = fmtNum(b.totalStudents); $('cun').textContent = fmtNum(Math.max(0, b.totalStudents - paid)); $('ctot').textContent = c.money(paid * per);
-      $('hint').textContent = b.totalStudents ? '' : c.t('setStudentsHint'); };
+      $('hint').textContent = b.totalStudents ? '' : c.t('setStudentsHint');
+      const ro = rosterFor(c.d, c.month, b.name); $('cres').textContent = ro ? `${c.t('residents')}: ${residentsText(ro)}` : ''; };
     $('cb').onchange = () => { $('cps').value = bOf().perStudent || ''; calc(); };
     $('cp').oninput = $('cps').oninput = calc; $('cps').value = bOf().perStudent || ''; calc();
     m.querySelectorAll('[data-edit]').forEach((el) => (el.onclick = () => { const x = c.d.collections.find((r) => r.id === el.dataset.edit); editId = x.id;

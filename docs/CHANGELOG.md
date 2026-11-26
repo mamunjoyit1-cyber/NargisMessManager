@@ -1,4 +1,10 @@
 # Changelog
+## 4.0.0-dev.3 — ডিসেম্বর Resident তালিকা (Task 3-এর আগে যোগ)
+- নতুন `src/constants/roster.js`: ডিসেম্বর ২০২৬ তালিকা (১২ Batch, ২০ জন, B3-এ ২ জন Senior Group ⭐), মাসভিত্তিক `d.rosters[YYYY-MM]`।
+- `databaseService.js`: পুরোনো/লাইভ ডাটায় শুধু `rosters` যোগ হয়; Batch, এন্ট্রি, Opening কিছুই বদলায় না। Restore-এও কাজ করে।
+- Collection স্ক্রিনে নির্বাচিত মাস ও Batch-এর Resident তালিকা দেখায়।
+- More → Batch Settings: Admin-এর বাটন — নির্বাচিত মাসের তালিকা অনুযায়ী Batch নাম ও মোট সংখ্যা সেট (আগের এন্ট্রি অপরিবর্তিত, Audit-এ `roster_apply`)।
+- `sw.js` cache `nmm-v5`। নতুন Test: `roster.test.mjs` (৭), `rosterUi.test.mjs` (৭)।
 ## 4.0.0-dev.2 — Phase 4A / Task 2 (Pending entry edit UI)
 - Collection, Deposit, Market, Expense: Pending এন্ট্রিতে `সম্পাদনা` বাটন। একই ফর্ম Edit মোডে খোলে (`আপডেট` / `বাতিল`), Batch বদলানো যায় না।
 - `app.js`: `c.editEntry` / `c.canEdit` (নিয়ম `entryEdit.js`-এ), Audit log `edit`, Assistant সম্পাদনা করলে Approver Notification।
