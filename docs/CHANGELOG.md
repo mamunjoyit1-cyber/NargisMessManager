@@ -1,0 +1,11 @@
+# Changelog
+## 4.0.0-dev.2 — Phase 4A / Task 2 (Pending entry edit UI)
+- Collection, Deposit, Market, Expense: Pending এন্ট্রিতে `সম্পাদনা` বাটন। একই ফর্ম Edit মোডে খোলে (`আপডেট` / `বাতিল`), Batch বদলানো যায় না।
+- `app.js`: `c.editEntry` / `c.canEdit` (নিয়ম `entryEdit.js`-এ), Audit log `edit`, Assistant সম্পাদনা করলে Approver Notification।
+- i18n: edit, update, cancel ও ত্রুটির বার্তা (বাংলা + English)।
+- নতুন Test: `tests/editUi.test.mjs` (১৭টি)। Approved এন্ট্রি ও Closed মাসে বাটন দেখা যায় না।
+## 4.0.0-dev.1 — Phase 4A / Task 1 (entry edit rules)
+- নতুন: `src/utils/entryEdit.js` (canEditEntry, buildEdit) — Pending/Rejected edit নিয়ম, Resubmit, editHistory। এখনো কোনো স্ক্রিনে যুক্ত হয়নি।
+- নতুন: `tests/` (core, entryEdit, ui) ও `package.json` (`npm test`, শুধু টেস্টের জন্য; অ্যাপে Build লাগে না)।
+## 3.1 — Audit fixes
+- Restore JSON যাচাই, Closed মাসে Approve/Reject/Delete বন্ধ, নতুন মাসে আগের Closing → Opening, Assistant-এর Rejected Market/Expense দেখা, SW cache nmm-v4।

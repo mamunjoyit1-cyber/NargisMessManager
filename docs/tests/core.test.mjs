@@ -1,0 +1,48 @@
+import test from 'node:test'; import assert from 'node:assert/strict';
+const mk=()=>{let s={};return{getItem:k=>k in s?s[k]:null,setItem:(k,v)=>{s[k]=String(v)},removeItem:k=>{delete s[k]},clear:()=>{s={}}}};
+globalThis.localStorage=mk(); globalThis.sessionStorage=mk(); globalThis.document={documentElement:{}};
+const db=await import('../src/services/databaseService.js');
+const auth=await import('../src/services/authService.js');
+const calc=await import('../src/utils/calculations.js');
+const {can}=await import('../src/constants/roles.js');
+const {checkCollection,checkAmount}=await import('../src/utils/validation.js');
+const {thisMonth}=await import('../src/utils/dateUtils.js');
+const M=thisMonth();
+const reset=async()=>{localStorage.clear();sessionStorage.clear();await db.init();await auth.seed(db)};
+test('accounting: 10000 + 5000 - 4000 = 11000',async()=>{await reset();
+ await db.update('months',db.get().months[0].id,{openingCash:10000});
+ await db.add('deposits',{month:M,amount:5000,status:'approved'});
+ await db.add('expenses',{month:M,amount:4000,status:'approved',category:'gas'});
+ assert.equal(calc.monthSummary(db.get(),M).cash,11000)});
+test('pending/rejected do not change cash',async()=>{
+ await db.add('deposits',{month:M,amount:999,status:'pending'});await db.add('expenses',{month:M,amount:777,status:'pending'});
+ await db.add('markets',{month:M,amount:555,status:'rejected'});
+ const s=calc.monthSummary(db.get(),M);assert.equal(s.cash,11000);assert.equal(s.pendingCount,2)});
+test('market expense counted',async()=>{await db.add('markets',{month:M,amount:1000,status:'approved'});assert.equal(calc.monthSummary(db.get(),M).cash,10000)});
+test('collection not in cash until deposited',async()=>{await db.add('collections',{month:M,amount:20000,status:'approved'});const s=calc.monthSummary(db.get(),M);assert.equal(s.cash,10000);assert.equal(s.notDeposited,20000-5000)});
+test('roles',()=>{assert.ok(!can('assistant','approve'));assert.ok(!can('assistant','restore'));assert.ok(!can('senior','restore'));assert.ok(can('admin','restore'));assert.ok(can('admin','closeMonth'));assert.ok(!can('senior','closeMonth'));assert.ok(can('senior','approve'));assert.ok(!can('assistant','backup'))});
+test('login ok/fail',async()=>{await reset();
+ assert.equal((await auth.login(db,'admin','bad',{name:'',batch:''})).ok,false);
+ assert.equal((await auth.login(db,'assistant','assist123',{name:' ',batch:''})).err,'needName');
+ assert.equal((await auth.login(db,'assistant','assist123',{name:'Rima',batch:''})).ok,true);
+ assert.equal(auth.currentUser(db.get()).id,'assistant')});
+test('persistence across reload',async()=>{await reset();await db.add('deposits',{month:M,amount:1,status:'approved'});
+ const raw=localStorage.getItem('nmm_db_v1');await db.init();assert.equal(db.get().deposits.length,1);assert.ok(raw.includes('deposits'))});
+test('init does not duplicate current month on repeat',async()=>{await db.init();await db.init();assert.equal(db.get().months.filter(m=>m.id===M).length,1)});
+test('closing carries to next month opening (logic)',async()=>{await reset();
+ await db.update('months',M,{}).catch(()=>{});db.get().months[0].openingCash=10000;
+ await db.add('deposits',{month:M,amount:5000,status:'approved'});
+ const next='2099-01',pm=calc.prevMonthId(db.get(),next);assert.equal(pm,M);assert.equal(calc.monthSummary(db.get(),pm).cash,15000)});
+test('validation',()=>{assert.equal(checkAmount(0),'errAmount');assert.equal(checkAmount(-5),'errAmount');assert.equal(checkAmount(5),null);
+ assert.equal(checkCollection({paid:5,per:0,total:10}),'errPer');assert.equal(checkCollection({paid:11,per:5,total:10}),'errPaidMax');assert.equal(checkCollection({paid:-1,per:5,total:10}),'errPaid')});
+test('report data builds with demo entries',async()=>{await reset();
+ await db.add('collections',{month:M,date:M+'-05',amount:1000,status:'approved',batchName:'B1',paidCount:10,perStudent:100,entryName:'Rima'});
+ await db.add('markets',{month:M,date:M+'-06',amount:300,status:'approved',items:[{name:'x',qty:1,unit:'kg'}]});
+ await db.add('expenses',{month:M,date:M+'-07',amount:200,status:'approved',category:'gas'});
+ const r=calc.reportData(db.get(),M,k=>k);assert.equal(r.s.expense,500);assert.equal(r.dayByDay.length,3);assert.equal(r.batchWise[0].paid,10)});
+
+test('init carries previous month closing into auto-created current month',async()=>{
+ localStorage.setItem('nmm_db_v1',JSON.stringify({version:1,settings:{},batches:[],months:[{id:'2020-01',openingCash:10000,status:'closed'}],users:[],collections:[],deposits:[{month:'2020-01',amount:5000,status:'approved'}],unpaid:[],notifications:[],audit:[],expenses:[{month:'2020-01',amount:4000,status:'approved'}]}));
+ await db.init(); const m=db.get().months.find(x=>x.id===thisMonth()); assert.equal(m.openingCash,11000)});
+test('fresh install opening = 0',async()=>{localStorage.clear();await db.init();assert.equal(db.get().months[0].openingCash,0)});
+test('still 12 core accounting',async()=>{localStorage.clear();await db.init();const M=thisMonth();db.get().months[0].openingCash=10000;await db.add('deposits',{month:M,amount:5000,status:'approved'});await db.add('expenses',{month:M,amount:4000,status:'approved'});await db.add('deposits',{month:M,amount:1,status:'pending'});assert.equal(calc.monthSummary(db.get(),M).cash,11000)});
